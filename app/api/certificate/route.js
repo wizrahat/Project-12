@@ -7,6 +7,8 @@ import { getAReport } from "@/queries/reports";
 
 import { formatMyDate } from "@/lib/date";
 
+export const dynamic = "force-dynamic";
+
 // Fetch custom fonts
 // const kalamFontUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/fonts/kalam/Kalam-Regular.ttf`;
 // const kalamFontBytes = await fetch(kalamFontUrl).then((res) =>
@@ -39,11 +41,6 @@ import { formatMyDate } from "@/lib/date";
 
 export async function GET(request) {
   try {
-    /* -----------------
-     *
-     * Configuratios
-     *
-     *-------------------*/
     const searchParams = request.nextUrl.searchParams;
     const courseId = searchParams.get("courseId");
     const course = await getCourseDetails(courseId);
@@ -73,14 +70,19 @@ export async function GET(request) {
     const pdfDoc = await PDFDocument.create();
     pdfDoc.registerFontkit(fontkit);
 
-    const kalamFont = await pdfDoc.embedFont(kalamFontBytes);
-    const montserratItalic = await pdfDoc.embedFont(montserratItalicFontBytes);
-
-    const montserrat = await pdfDoc.embedFont(montserratFontBytes);
-
     const page = pdfDoc.addPage([841.89, 595.28]);
     const { width, height } = page.getSize();
     const timesRomanFont = await pdfDoc.embedFont(StandardFonts.TimesRoman);
+    const timesRomanBoldFont = await pdfDoc.embedFont(
+      StandardFonts.TimesRomanBold,
+    );
+    const timesRomanItalicFont = await pdfDoc.embedFont(
+      StandardFonts.TimesRomanItalic,
+    );
+
+    // const kalamFont = await pdfDoc.embedFont(kalamFontBytes);
+    // const montserratItalic = await pdfDoc.embedFont(montserratItalicFontBytes);
+    // const montserrat = await pdfDoc.embedFont(montserratFontBytes);
 
     /* -----------------
      *
@@ -98,25 +100,25 @@ export async function GET(request) {
     //   height: logoDimns.height,
     // });
 
+    const logoDimns = { height: 80 };
+
     /* -----------------
      *
      * Title
      *
      *-------------------*/
-
     const titleFontSize = 30;
     const titleText = "Certificate Of Completion";
-    // title text width
-    const titleTextWidth = montserrat.widthOfTextAtSize(
+    const titleTextWidth = timesRomanBoldFont.widthOfTextAtSize(
       titleText,
       titleFontSize,
     );
 
-    page.drawText("Certificate Of Completion", {
+    page.drawText(titleText, {
       x: width / 2 - titleTextWidth / 2,
       y: height - (logoDimns.height + 125),
       size: titleFontSize,
-      font: montserrat,
+      font: timesRomanBoldFont,
       color: rgb(0, 0.53, 0.71),
     });
 
@@ -126,10 +128,8 @@ export async function GET(request) {
      *
      *-------------------*/
     const nameLabelText = "This certificate is hereby bestowed upon";
-
     const nameLabelFontSize = 20;
-    // title text width
-    const nameLabelTextWidth = montserratItalic.widthOfTextAtSize(
+    const nameLabelTextWidth = timesRomanItalicFont.widthOfTextAtSize(
       nameLabelText,
       nameLabelFontSize,
     );
@@ -138,7 +138,7 @@ export async function GET(request) {
       x: width / 2 - nameLabelTextWidth / 2,
       y: height - (logoDimns.height + 170),
       size: nameLabelFontSize,
-      font: montserratItalic,
+      font: timesRomanItalicFont,
       color: rgb(0, 0, 0),
     });
 
@@ -148,9 +148,7 @@ export async function GET(request) {
      *
      *-------------------*/
     const nameText = completionInfo.name;
-
     const nameFontSize = 40;
-    // title text width
     const nameTextWidth = timesRomanFont.widthOfTextAtSize(
       nameText,
       nameFontSize,
@@ -160,7 +158,7 @@ export async function GET(request) {
       x: width / 2 - nameTextWidth / 2,
       y: height - (logoDimns.height + 220),
       size: nameFontSize,
-      font: kalamFont,
+      font: timesRomanFont,
       color: rgb(0, 0, 0),
     });
 
@@ -170,19 +168,13 @@ export async function GET(request) {
      *
      *-------------------*/
     const detailsText = `This is to certify that ${completionInfo.name} successfully completed the ${completionInfo.courseName} course on ${completionInfo.completionDate} by ${completionInfo.instructor}`;
-
     const detailsFontSize = 16;
-    // title text width
-    const detailsTextWidth = montserrat.widthOfTextAtSize(
-      titleText,
-      titleFontSize,
-    );
 
     page.drawText(detailsText, {
       x: width / 2 - 700 / 2,
       y: height - 330,
       size: detailsFontSize,
-      font: montserrat,
+      font: timesRomanFont,
       color: rgb(0, 0, 0),
       maxWidth: 700,
       wordBreaks: [" "],
@@ -217,10 +209,8 @@ export async function GET(request) {
     });
 
     // const signUrl = `${process.env.NEXT_PUBLIC_BASE_URL}${completionInfo.sign}`;
-
     // const signBytes = await fetch(signUrl).then((res) => res.arrayBuffer());
     // const sign = await pdfDoc.embedPng(signBytes);
-
     // page.drawImage(sign, {
     //   x: width - signatureBoxWidth,
     //   y: 120,
@@ -228,14 +218,11 @@ export async function GET(request) {
     //   height: 54,
     // });
 
-    // pattern
     // const patternUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/pattern.jpg`;
-
     // const patternBytes = await fetch(patternUrl).then((res) =>
     //   res.arrayBuffer(),
     // );
     // const pattern = await pdfDoc.embedJpg(patternBytes);
-
     // page.drawImage(pattern, {
     //   x: 0,
     //   y: 0,
@@ -243,6 +230,7 @@ export async function GET(request) {
     //   height: height,
     //   opacity: 0.2,
     // });
+
     /* -----------------
      *
      * Generate and send Response
