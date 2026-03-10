@@ -8,34 +8,34 @@ import { getAReport } from "@/queries/reports";
 import { formatMyDate } from "@/lib/date";
 
 // Fetch custom fonts
-const kalamFontUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/fonts/kalam/Kalam-Regular.ttf`;
-const kalamFontBytes = await fetch(kalamFontUrl).then((res) =>
-  res.arrayBuffer()
-);
-console.log({
-  env: process.env.NEXT_PUBLIC_BASE_URL,
-});
-console.log({
-  kalamFontUrl,
-  kalamFontBytes,
-});
+// const kalamFontUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/fonts/kalam/Kalam-Regular.ttf`;
+// const kalamFontBytes = await fetch(kalamFontUrl).then((res) =>
+//   res.arrayBuffer()
+// );
+// console.log({
+//   env: process.env.NEXT_PUBLIC_BASE_URL,
+// });
+// console.log({
+//   kalamFontUrl,
+//   kalamFontBytes,
+// });
 
-const montserratItalicFontUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/fonts/montserrat/Montserrat-Italic.ttf`;
-const montserratItalicFontBytes = await fetch(montserratItalicFontUrl).then(
-  (res) => res.arrayBuffer()
-);
-console.log({
-  montserratItalicFontUrl,
-  montserratItalicFontBytes,
-});
-const montserratFontUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/fonts/montserrat/Montserrat-Medium.ttf`;
-const montserratFontBytes = await fetch(montserratFontUrl).then((res) =>
-  res.arrayBuffer()
-);
-console.log({
-  montserratFontUrl,
-  montserratFontBytes,
-});
+// const montserratItalicFontUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/fonts/montserrat/Montserrat-Italic.ttf`;
+// const montserratItalicFontBytes = await fetch(montserratItalicFontUrl).then(
+//   (res) => res.arrayBuffer(),
+// );
+// console.log({
+//   montserratItalicFontUrl,
+//   montserratItalicFontBytes,
+// });
+// const montserratFontUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/fonts/montserrat/Montserrat-Medium.ttf`;
+// const montserratFontBytes = await fetch(montserratFontUrl).then((res) =>
+//   res.arrayBuffer(),
+// );
+// console.log({
+//   montserratFontUrl,
+//   montserratFontBytes,
+// });
 
 export async function GET(request) {
   try {
@@ -44,14 +44,19 @@ export async function GET(request) {
      * Configuratios
      *
      *-------------------*/
-    const searchParams = request.nextUrl.searchParams
-    const courseId = searchParams.get('courseId');
-    const course  = await getCourseDetails(courseId);
+    const searchParams = request.nextUrl.searchParams;
+    const courseId = searchParams.get("courseId");
+    const course = await getCourseDetails(courseId);
     const loggedInUser = await getLoggedInUser();
 
-    const report = await getAReport({ course: courseId, student:loggedInUser.id });
+    const report = await getAReport({
+      course: courseId,
+      student: loggedInUser.id,
+    });
     console.log(report?.completion_date);
-    const completionDate = report?.completion_date ? formatMyDate(report?.completion_date) : formatMyDate(Date.now());
+    const completionDate = report?.completion_date
+      ? formatMyDate(report?.completion_date)
+      : formatMyDate(Date.now());
     console.log(completionDate);
 
     const completionInfo = {
@@ -82,16 +87,16 @@ export async function GET(request) {
      * Logo
      *
      *-------------------*/
-    const logoUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/logo.png`;
-    const logoBytes = await fetch(logoUrl).then((res) => res.arrayBuffer());
-    const logo = await pdfDoc.embedPng(logoBytes);
-    const logoDimns = logo.scale(0.5);
-    page.drawImage(logo, {
-      x: width / 2 - logoDimns.width / 2,
-      y: height - 120,
-      width: logoDimns.width,
-      height: logoDimns.height,
-    });
+    // const logoUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/logo.png`;
+    // const logoBytes = await fetch(logoUrl).then((res) => res.arrayBuffer());
+    // const logo = await pdfDoc.embedPng(logoBytes);
+    // const logoDimns = logo.scale(0.5);
+    // page.drawImage(logo, {
+    //   x: width / 2,
+    //   y: height - 120,
+    //   width: logoDimns.width,
+    //   height: logoDimns.height,
+    // });
 
     /* -----------------
      *
@@ -104,7 +109,7 @@ export async function GET(request) {
     // title text width
     const titleTextWidth = montserrat.widthOfTextAtSize(
       titleText,
-      titleFontSize
+      titleFontSize,
     );
 
     page.drawText("Certificate Of Completion", {
@@ -126,7 +131,7 @@ export async function GET(request) {
     // title text width
     const nameLabelTextWidth = montserratItalic.widthOfTextAtSize(
       nameLabelText,
-      nameLabelFontSize
+      nameLabelFontSize,
     );
 
     page.drawText(nameLabelText, {
@@ -148,7 +153,7 @@ export async function GET(request) {
     // title text width
     const nameTextWidth = timesRomanFont.widthOfTextAtSize(
       nameText,
-      nameFontSize
+      nameFontSize,
     );
 
     page.drawText(nameText, {
@@ -170,7 +175,7 @@ export async function GET(request) {
     // title text width
     const detailsTextWidth = montserrat.widthOfTextAtSize(
       titleText,
-      titleFontSize
+      titleFontSize,
     );
 
     page.drawText(detailsText, {
@@ -202,7 +207,7 @@ export async function GET(request) {
       size: 10,
       font: timesRomanFont,
       color: rgb(0, 0, 0),
-      maxWidth: 250
+      maxWidth: 250,
     });
     page.drawLine({
       start: { x: width - signatureBoxWidth, y: 110 },
@@ -211,33 +216,33 @@ export async function GET(request) {
       color: rgb(0, 0, 0),
     });
 
-    const signUrl = `${process.env.NEXT_PUBLIC_BASE_URL}${completionInfo.sign}`;
+    // const signUrl = `${process.env.NEXT_PUBLIC_BASE_URL}${completionInfo.sign}`;
 
-    const signBytes = await fetch(signUrl).then((res) => res.arrayBuffer());
-    const sign = await pdfDoc.embedPng(signBytes);
+    // const signBytes = await fetch(signUrl).then((res) => res.arrayBuffer());
+    // const sign = await pdfDoc.embedPng(signBytes);
 
-    page.drawImage(sign, {
-      x: width - signatureBoxWidth,
-      y: 120,
-      width: 180,
-      height: 54,
-    });
+    // page.drawImage(sign, {
+    //   x: width - signatureBoxWidth,
+    //   y: 120,
+    //   width: 180,
+    //   height: 54,
+    // });
 
     // pattern
-    const patternUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/pattern.jpg`;
+    // const patternUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/pattern.jpg`;
 
-    const patternBytes = await fetch(patternUrl).then((res) =>
-      res.arrayBuffer()
-    );
-    const pattern = await pdfDoc.embedJpg(patternBytes);
+    // const patternBytes = await fetch(patternUrl).then((res) =>
+    //   res.arrayBuffer(),
+    // );
+    // const pattern = await pdfDoc.embedJpg(patternBytes);
 
-    page.drawImage(pattern, {
-      x: 0,
-      y: 0,
-      width: width,
-      height: height,
-      opacity: 0.2,
-    });
+    // page.drawImage(pattern, {
+    //   x: 0,
+    //   y: 0,
+    //   width: width,
+    //   height: height,
+    //   opacity: 0.2,
+    // });
     /* -----------------
      *
      * Generate and send Response
