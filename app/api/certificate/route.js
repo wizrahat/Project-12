@@ -7,40 +7,33 @@ import { getAReport } from "@/queries/reports";
 
 import { formatMyDate } from "@/lib/date";
 
-export const dynamic = "force-dynamic";
-
-// Fetch custom fonts
-// const kalamFontUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/fonts/kalam/Kalam-Regular.ttf`;
-// const kalamFontBytes = await fetch(kalamFontUrl).then((res) =>
-//   res.arrayBuffer()
-// );
-// console.log({
-//   env: process.env.NEXT_PUBLIC_BASE_URL,
-// });
-// console.log({
-//   kalamFontUrl,
-//   kalamFontBytes,
-// });
-
-// const montserratItalicFontUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/fonts/montserrat/Montserrat-Italic.ttf`;
-// const montserratItalicFontBytes = await fetch(montserratItalicFontUrl).then(
-//   (res) => res.arrayBuffer(),
-// );
-// console.log({
-//   montserratItalicFontUrl,
-//   montserratItalicFontBytes,
-// });
-// const montserratFontUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/fonts/montserrat/Montserrat-Medium.ttf`;
-// const montserratFontBytes = await fetch(montserratFontUrl).then((res) =>
-//   res.arrayBuffer(),
-// );
-// console.log({
-//   montserratFontUrl,
-//   montserratFontBytes,
-// });
-
 export async function GET(request) {
   try {
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+
+    /* -----------------
+     *
+     * Fetch custom fonts (inside GET so they run at request time, not build time)
+     *
+     *-------------------*/
+    const [kalamFontBytes, montserratItalicFontBytes, montserratFontBytes] =
+      await Promise.all([
+        fetch(`${baseUrl}/fonts/kalam/Kalam-Regular.ttf`).then((r) =>
+          r.arrayBuffer(),
+        ),
+        fetch(`${baseUrl}/fonts/montserrat/Montserrat-Italic.ttf`).then((r) =>
+          r.arrayBuffer(),
+        ),
+        fetch(`${baseUrl}/fonts/montserrat/Montserrat-Medium.ttf`).then((r) =>
+          r.arrayBuffer(),
+        ),
+      ]);
+
+    /* -----------------
+     *
+     * Configurations
+     *
+     *-------------------*/
     const searchParams = request.nextUrl.searchParams;
     const courseId = searchParams.get("courseId");
     const course = await getCourseDetails(courseId);
@@ -50,11 +43,10 @@ export async function GET(request) {
       course: courseId,
       student: loggedInUser.id,
     });
-    console.log(report?.completion_date);
+
     const completionDate = report?.completion_date
       ? formatMyDate(report?.completion_date)
       : formatMyDate(Date.now());
-    console.log(completionDate);
 
     const completionInfo = {
       name: `${loggedInUser?.firstName} ${loggedInUser?.lastName}`,
@@ -65,42 +57,33 @@ export async function GET(request) {
       sign: "/sign.png",
     };
 
-    console.log(completionInfo);
-
     const pdfDoc = await PDFDocument.create();
     pdfDoc.registerFontkit(fontkit);
+
+    const kalamFont = await pdfDoc.embedFont(kalamFontBytes);
+    const montserratItalic = await pdfDoc.embedFont(montserratItalicFontBytes);
+    const montserrat = await pdfDoc.embedFont(montserratFontBytes);
 
     const page = pdfDoc.addPage([841.89, 595.28]);
     const { width, height } = page.getSize();
     const timesRomanFont = await pdfDoc.embedFont(StandardFonts.TimesRoman);
-    const timesRomanBoldFont = await pdfDoc.embedFont(
-      StandardFonts.TimesRomanBold,
-    );
-    const timesRomanItalicFont = await pdfDoc.embedFont(
-      StandardFonts.TimesRomanItalic,
-    );
-
-    // const kalamFont = await pdfDoc.embedFont(kalamFontBytes);
-    // const montserratItalic = await pdfDoc.embedFont(montserratItalicFontBytes);
-    // const montserrat = await pdfDoc.embedFont(montserratFontBytes);
 
     /* -----------------
      *
      * Logo
      *
      *-------------------*/
-    // const logoUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/logo.png`;
-    // const logoBytes = await fetch(logoUrl).then((res) => res.arrayBuffer());
-    // const logo = await pdfDoc.embedPng(logoBytes);
-    // const logoDimns = logo.scale(0.5);
-    // page.drawImage(logo, {
-    //   x: width / 2,
-    //   y: height - 120,
-    //   width: logoDimns.width,
-    //   height: logoDimns.height,
-    // });
-
-    const logoDimns = { height: 80 };
+    const logoBytes = await fetch(`${baseUrl}/logo.png`).then((r) =>
+      r.arrayBuffer(),
+    );
+    const logo = await pdfDoc.embedPng(logoBytes);
+    const logoDimns = logo.scale(0.5);
+    page.drawImage(logo, {
+      x: width / 2 - logoDimns.width / 2,
+      y: height - 120,
+      width: logoDimns.width,
+      height: logoDimns.height,
+    });
 
     /* -----------------
      *
@@ -109,16 +92,16 @@ export async function GET(request) {
      *-------------------*/
     const titleFontSize = 30;
     const titleText = "Certificate Of Completion";
-    const titleTextWidth = timesRomanBoldFont.widthOfTextAtSize(
+    const titleTextWidth = montserrat.widthOfTextAtSize(
       titleText,
       titleFontSize,
     );
 
-    page.drawText(titleText, {
+    page.drawText("Certificate Of Completion", {
       x: width / 2 - titleTextWidth / 2,
       y: height - (logoDimns.height + 125),
       size: titleFontSize,
-      font: timesRomanBoldFont,
+      font: montserrat,
       color: rgb(0, 0.53, 0.71),
     });
 
@@ -129,7 +112,7 @@ export async function GET(request) {
      *-------------------*/
     const nameLabelText = "This certificate is hereby bestowed upon";
     const nameLabelFontSize = 20;
-    const nameLabelTextWidth = timesRomanItalicFont.widthOfTextAtSize(
+    const nameLabelTextWidth = montserratItalic.widthOfTextAtSize(
       nameLabelText,
       nameLabelFontSize,
     );
@@ -138,7 +121,7 @@ export async function GET(request) {
       x: width / 2 - nameLabelTextWidth / 2,
       y: height - (logoDimns.height + 170),
       size: nameLabelFontSize,
-      font: timesRomanItalicFont,
+      font: montserratItalic,
       color: rgb(0, 0, 0),
     });
 
@@ -158,7 +141,7 @@ export async function GET(request) {
       x: width / 2 - nameTextWidth / 2,
       y: height - (logoDimns.height + 220),
       size: nameFontSize,
-      font: timesRomanFont,
+      font: kalamFont,
       color: rgb(0, 0, 0),
     });
 
@@ -174,7 +157,7 @@ export async function GET(request) {
       x: width / 2 - 700 / 2,
       y: height - 330,
       size: detailsFontSize,
-      font: timesRomanFont,
+      font: montserrat,
       color: rgb(0, 0, 0),
       maxWidth: 700,
       wordBreaks: [" "],
@@ -186,6 +169,7 @@ export async function GET(request) {
      *
      *-------------------*/
     const signatureBoxWidth = 300;
+
     page.drawText(completionInfo.instructor, {
       x: width - signatureBoxWidth,
       y: 90,
@@ -193,6 +177,7 @@ export async function GET(request) {
       font: timesRomanFont,
       color: rgb(0, 0, 0),
     });
+
     page.drawText(completionInfo.instructorDesignation, {
       x: width - signatureBoxWidth,
       y: 72,
@@ -201,6 +186,7 @@ export async function GET(request) {
       color: rgb(0, 0, 0),
       maxWidth: 250,
     });
+
     page.drawLine({
       start: { x: width - signatureBoxWidth, y: 110 },
       end: { x: width - 60, y: 110 },
@@ -208,28 +194,35 @@ export async function GET(request) {
       color: rgb(0, 0, 0),
     });
 
-    // const signUrl = `${process.env.NEXT_PUBLIC_BASE_URL}${completionInfo.sign}`;
-    // const signBytes = await fetch(signUrl).then((res) => res.arrayBuffer());
-    // const sign = await pdfDoc.embedPng(signBytes);
-    // page.drawImage(sign, {
-    //   x: width - signatureBoxWidth,
-    //   y: 120,
-    //   width: 180,
-    //   height: 54,
-    // });
+    const signBytes = await fetch(`${baseUrl}${completionInfo.sign}`).then(
+      (r) => r.arrayBuffer(),
+    );
+    const sign = await pdfDoc.embedPng(signBytes);
 
-    // const patternUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/pattern.jpg`;
-    // const patternBytes = await fetch(patternUrl).then((res) =>
-    //   res.arrayBuffer(),
-    // );
-    // const pattern = await pdfDoc.embedJpg(patternBytes);
-    // page.drawImage(pattern, {
-    //   x: 0,
-    //   y: 0,
-    //   width: width,
-    //   height: height,
-    //   opacity: 0.2,
-    // });
+    page.drawImage(sign, {
+      x: width - signatureBoxWidth,
+      y: 120,
+      width: 180,
+      height: 54,
+    });
+
+    /* -----------------
+     *
+     * Background Pattern
+     *
+     *-------------------*/
+    const patternBytes = await fetch(`${baseUrl}/pattern.jpg`).then((r) =>
+      r.arrayBuffer(),
+    );
+    const pattern = await pdfDoc.embedJpg(patternBytes);
+
+    page.drawImage(pattern, {
+      x: 0,
+      y: 0,
+      width: width,
+      height: height,
+      opacity: 0.2,
+    });
 
     /* -----------------
      *
@@ -241,6 +234,10 @@ export async function GET(request) {
       headers: { "content-type": "application/pdf" },
     });
   } catch (error) {
-    console.log(error);
+    console.error(error);
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { "content-type": "application/json" },
+    });
   }
 }

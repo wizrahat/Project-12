@@ -1,6 +1,7 @@
 export const authConfig = {
-    session: {
-     strategy: 'jwt',
-    },
-    providers: [],
- }
+  session: {
+    strategy: "jwt",
+  },
+  trustHost: true,
+  providers: [],
+};
